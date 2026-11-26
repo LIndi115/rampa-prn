@@ -411,6 +411,10 @@
       regInput.focus();
     }
 
+    function normalizeCode(str) {
+      return (str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
     function formatStatusSq(raw) {
       const s = (raw || "").replace(/\s+/g, " ").trim();
       const u = s.toUpperCase();
@@ -424,30 +428,29 @@
       return u;
     }
 
-    function isHeaderLikeRow(c) {
-      const joined = c.join(" ").toUpperCase();
+    function isHeaderRow(cells) {
+      const upper = cells.map(x => x.toUpperCase());
       return (
-        (c[0] || "").toUpperCase() === "DATE" ||
-        (c[1] || "").toUpperCase().includes("FLIGHT NUMBER") ||
-        (c[7] || "").toUpperCase() === "REG" ||
-        joined.includes("FLIGHT NUMBER AIRLINE")
+        upper.includes("FLIGHT NUMBER") ||
+        upper.includes("REG") ||
+        (upper[0] === "DATE" && upper[1] === "FLIGHT NUMBER")
       );
     }
 
-    function parseRow(tdList) {
-      const c = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
+    function mapRow(cells) {
+      const c = cells.map(x => (x || "—").replace(/\s+/g, " ").trim() || "—");
       return {
-        date: c[0] || "—",
-        flight: c[1] || "—",
-        airline: c[2] || "—",
-        destination: c[3] || "—",
-        schedule: c[4] || "—",
-        etd: c[5] || "—",
-        acType: c[6] || "—",
-        reg: c[7] || "—",
-        checkin: c[8] || "—",
-        gate: c[9] || "—",
-        stand: c[10] || "—",
+        date: c[0],
+        flight: c[1],
+        airline: c[2],
+        destination: c[3],
+        schedule: c[4],
+        etd: c[5],
+        acType: c[6],
+        reg: c[7],
+        checkin: c[8],
+        gate: c[9],
+        stand: c[10],
         status: c[11] || ""
       };
     }
@@ -464,63 +467,65 @@
 
         const tables = [...doc.querySelectorAll("table")];
         const table = tables.find(t => t.querySelectorAll("tr").length > 1) || tables[0];
-        if (!table) throw new Error("No table");
+        if (!table) throw new Error("No table found");
 
-        const rows = [...table.querySelectorAll("tr")].filter(r => r.querySelectorAll("td").length >= 8);
+        const trList = [...table.querySelectorAll("tr")];
+        const parsed = [];
 
-        flights = rows
-          .map(r => [...r.querySelectorAll("td")].map(td => td.innerText.replace(/\s+/g, " ").trim()))
-          .filter(c => !isHeaderLikeRow(c) && (c[1] || c[7]))
-          .map(c => ({
-            date: c[0] || "—",
-            flight: c[1] || "—",
-            airline: c[2] || "—",
-            destination: c[3] || "—",
-            schedule: c[4] || "—",
-            etd: c[5] || "—",
-            acType: c[6] || "—",
-            reg: c[7] || "—",
-            checkin: c[8] || "—",
-            gate: c[9] || "—",
-            stand: c[10] || "—",
-            status: c[11] || ""
-          }));
+        for (const tr of trList) {
+          const tdList = [...tr.querySelectorAll("td")];
+          if (tdList.length < 8) continue;
+          const cells = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
+          if (isHeaderRow(cells)) continue;
+          const item = mapRow(cells);
+          if (item.flight !== "—" || item.reg !== "—") {
+            parsed.push(item);
+          }
+        }
 
+        flights = parsed;
         dataLoaded = true;
+
         const nowTime = new Date().toTimeString().slice(0, 8);
         freezeBadge.classList.add("locked");
-        freezeBadge.textContent = `Ngrirë • ${nowTime}`;
+        freezeBadge.textContent = `Ngrirë • ${nowTime} (${flights.length})`;
         renderResult();
-      } catch (e) {
+      } catch (err) {
         freezeBadge.classList.remove("locked");
         freezeBadge.textContent = "Gabim ngarkimi";
-        content.innerHTML = `<div class="idle-box"><strong>Nuk u lexuan të dhënat</strong>Shtyp butonin e gjelbër ↻ për të provuar sërish.</div>`;
+        content.innerHTML = `
+          <div class="idle-box">
+            <strong>Nuk u lexuan të dhënat</strong>
+            Shtyp butonin e gjelbër ↻ për të provuar sërish.
+          </div>
+        `;
       } finally {
         refreshBtn.classList.remove("spin");
       }
     }
 
     function renderResult() {
-      const q = regInput.value.toLowerCase().trim();
+      const rawQuery = regInput.value.trim();
+      const normQuery = normalizeCode(rawQuery);
 
-      if (!q) {
+      if (!normQuery) {
         content.innerHTML = `
           <div class="idle-box">
             <strong>Shkruaj regjistrimin e avionit lart</strong>
             ${dataLoaded
               ? `Të dhënat janë të ngrira dhe gati (${flights.length} shkumje). Shkruaj p.sh. <b>LZCRI</b> ose <b>HBUVD</b>.`
-              : `Duke përgatitur të dhënat...`}
+              : `Duke ngarkuar të dhënat...`}
           </div>
         `;
         return;
       }
 
-      const matches = flights.filter(f => f.reg.toLowerCase().includes(q));
+      const matches = flights.filter(f => normalizeCode(f.reg).includes(normQuery));
 
       if (!matches.length) {
         content.innerHTML = `
           <div class="idle-box">
-            <strong>Nuk u gjet asnjë avion me regjistrimin "${regInput.value.trim().toUpperCase()}"</strong>
+            <strong>Nuk u gjet asnjë avion me regjistrimin "${rawQuery.toUpperCase()}"</strong>
             Kontrollo regjistrimin ose shtyp butonin e gjelbër ↻ për të rifreskuar listën.
           </div>
         `;
