@@ -389,9 +389,6 @@
 
   <script>
     const WORKER_URL = "https://twilight-waterfall-cef0.lindiismajli97.workers.dev";
-    const TARGET_URL = "https://flights.limakkosovo.aero/dep.php";
-    const AUTH_USER = "flight";
-    const AUTH_PASS = "!P4N@1702";
 
     let flights = [];
     let dataLoaded = false;
@@ -458,46 +455,40 @@
       };
     }
 
-    function parseFlightsFromHtml(htmlText) {
-      const doc = new DOMParser().parseFromString(htmlText, "text/html");
-      const tables = [...doc.querySelectorAll("table")];
-      const table = tables.find(t => t.querySelectorAll("tr").length > 1) || tables[0];
-      if (!table) return [];
-
-      const trList = [...table.querySelectorAll("tr")];
-      const parsed = [];
-
-      for (const tr of trList) {
-        const tdList = [...tr.querySelectorAll("td")];
-        if (tdList.length < 7) continue;
-        const cells = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
-        if (isHeaderRow(cells)) continue;
-        const item = mapRow(cells);
-        if (item.flight !== "—" || item.reg !== "—") {
-          parsed.push(item);
-        }
-      }
-
-      return parsed;
-    }
-
-    async function fetchHtmlFromSource() {
-      const workerEndpoint = `${WORKER_URL}?type=dep&url=${encodeURIComponent(TARGET_URL)}&u=${encodeURIComponent(AUTH_USER)}&p=${encodeURIComponent(AUTH_PASS)}&t=${Date.now()}`;
-      const res = await fetch(workerEndpoint, { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      return await res.text();
-    }
-
     async function loadData() {
       refreshBtn.classList.add("spin");
       freezeBadge.classList.remove("locked");
       freezeBadge.textContent = "Duke ngarkuar...";
 
       try {
-        const htmlText = await fetchHtmlFromSource();
-        flights = parseFlightsFromHtml(htmlText);
+        const res = await fetch(`${WORKER_URL}?type=dep&t=${Date.now()}`, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const htmlText = await res.text();
+        const doc = new DOMParser().parseFromString(htmlText, "text/html");
+        const tables = [...doc.querySelectorAll("table")];
+        const table = tables.find(t => t.querySelectorAll("tr").length > 1) || tables[0];
+        if (!table) {
+          throw new Error("Tabela nuk u gjet");
+        }
+
+        const trList = [...table.querySelectorAll("tr")];
+        const parsed = [];
+
+        for (const tr of trList) {
+          const tdList = [...tr.querySelectorAll("td")];
+          if (tdList.length < 7) continue;
+          const cells = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
+          if (isHeaderRow(cells)) continue;
+          const item = mapRow(cells);
+          if (item.flight !== "—" || item.reg !== "—") {
+            parsed.push(item);
+          }
+        }
+
+        flights = parsed;
         dataLoaded = true;
 
         const nowTime = new Date().toTimeString().slice(0, 8);
