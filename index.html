@@ -3,216 +3,616 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Rampa PRN - Fluturimet</title>
-  <meta name="theme-color" content="#0f172a">
+  <title>PRN RAMP OPS — Kërkim me REG</title>
+  <meta name="theme-color" content="#070b14">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; padding-bottom: 30px; }
+    :root {
+      --bg: #070b14;
+      --panel: #0e1626;
+      --card: #121d33;
+      --line: #213254;
+      --text: #f8fafc;
+      --sub: #94a3b8;
+      --cyan: #38bdf8;
+      --cyan-bg: rgba(56, 189, 248, 0.14);
+      --gold: #facc15;
+      --green: #22c55e;
+      --green-bg: #15803d;
+      --amber: #f59e0b;
+      --slate: #64748b;
+    }
 
-    .header {
-      position: sticky; top: 0; z-index: 100;
-      background: #0f172a; border-bottom: 1px solid #1e293b;
-      padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
     }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .title { font-size: 18px; font-weight: 800; color: #38bdf8; }
-    .status-badge { font-size: 11px; background: #1e293b; color: #94a3b8; padding: 4px 8px; border-radius: 6px; }
 
-    .tabs { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 10px; }
-    .tab-btn {
-      padding: 10px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px;
-      background: #1e293b; color: #94a3b8; cursor: pointer;
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 40px;
     }
-    .tab-btn.active { background: #0284c7; color: #ffffff; }
-    .refresh-btn {
-      padding: 10px 14px; border: none; border-radius: 8px; font-weight: 800; font-size: 15px;
-      background: #16a34a; color: #fff; cursor: pointer;
-    }
-    .refresh-btn:active { transform: scale(0.96); }
 
-    .search-box { position: relative; }
-    .search-input {
-      width: 100%; padding: 12px 38px 12px 12px; font-size: 16px; font-weight: 600;
-      border-radius: 10px; border: 2px solid #38bdf8; background: #1e293b; color: #fff; outline: none;
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7, 11, 20, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
     }
-    .search-input::placeholder { color: #64748b; font-weight: 400; }
+
+    .top-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 0.4px;
+    }
+
+    .chip {
+      background: var(--cyan-bg);
+      color: var(--cyan);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      font-size: 11px;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .right-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .freeze-badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .freeze-badge.locked {
+      color: #86efac;
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(21, 128, 61, 0.16);
+    }
+
+    .refresh-circle {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #4ade80;
+      background: var(--green-bg);
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.35);
+      transition: transform 0.14s ease, background 0.15s ease;
+    }
+
+    .refresh-circle:active {
+      transform: scale(0.9);
+      background: var(--green);
+    }
+
+    .refresh-circle.spin {
+      animation: rot 0.7s linear infinite;
+    }
+
+    @keyframes rot {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .search-wrap {
+      position: relative;
+    }
+
+    .reg-input {
+      width: 100%;
+      padding: 15px 46px 15px 16px;
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #ffffff;
+      background: var(--panel);
+      border: 2px solid var(--cyan);
+      border-radius: 12px;
+      outline: none;
+    }
+
+    .reg-input::placeholder {
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--sub);
+    }
+
     .clear-btn {
-      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-      background: #475569; color: #fff; border: none; border-radius: 50%;
-      width: 24px; height: 24px; font-size: 13px; cursor: pointer; display: none;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: #334155;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
     }
 
-    .container { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-    .card {
-      background: #1e293b; border-radius: 10px; padding: 12px;
-      border-left: 6px solid #22c55e; box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    }
-    .card.departed { border-left-color: #64748b; opacity: 0.78; }
-
-    .card-row-1 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .reg-tag { font-size: 21px; font-weight: 900; color: #facc15; letter-spacing: 0.5px; }
-    .stand-tag {
-      background: #0284c7; color: #fff; padding: 4px 10px; border-radius: 6px;
-      font-size: 16px; font-weight: 900;
+    .content {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 16px 14px;
     }
 
-    .dest-row { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 6px; }
-    .flight-sub { font-size: 13px; color: #94a3b8; font-weight: 600; }
-
-    .meta-row {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 13px; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 6px;
+    .idle-box {
+      text-align: center;
+      padding: 44px 20px;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      color: var(--sub);
+      font-size: 15px;
     }
-    .empty { text-align: center; padding: 30px 15px; color: #94a3b8; font-size: 15px; }
+
+    .idle-box strong {
+      color: var(--gold);
+      font-size: 17px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .cards-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .aircraft-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--green);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.38);
+    }
+
+    .aircraft-card.departed {
+      border-left-color: var(--slate);
+    }
+
+    .aircraft-card.delayed {
+      border-left-color: var(--amber);
+    }
+
+    .hero-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .kicker {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--sub);
+      margin-bottom: 3px;
+    }
+
+    .reg-big {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 1px;
+      line-height: 1.05;
+    }
+
+    .stand-box {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid rgba(125, 211, 252, 0.35);
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-align: right;
+    }
+
+    .stand-box .kicker {
+      color: #bae6fd;
+      margin-bottom: 1px;
+    }
+
+    .stand-big {
+      font-size: 21px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .dest-box {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 13px;
+      margin-bottom: 12px;
+    }
+
+    .dest-big {
+      font-size: 22px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .info-cell {
+      background: var(--bg);
+      border: 1px solid #1b2842;
+      border-radius: 9px;
+      padding: 9px 11px;
+    }
+
+    .info-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--sub);
+      margin-bottom: 3px;
+    }
+
+    .info-val {
+      font-size: 14px;
+      font-weight: 800;
+      color: #f1f5f9;
+      word-break: break-word;
+    }
+
+    .status-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 9px;
+      background: var(--cyan-bg);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .status-strip.done {
+      background: rgba(100, 116, 139, 0.18);
+      border-color: rgba(100, 116, 139, 0.35);
+    }
+
+    .status-strip.warn {
+      background: rgba(245, 158, 11, 0.16);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .status-lbl {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--sub);
+    }
+
+    .status-val {
+      font-size: 15px;
+      font-weight: 900;
+      color: #7dd3fc;
+    }
+
+    .status-strip.done .status-val {
+      color: #e2e8f0;
+    }
+
+    .status-strip.warn .status-val {
+      color: #fcd34d;
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="top-bar">
-      <div class="title">✈️ RAMPA PRN</div>
-      <div class="status-badge" id="lastUpdate">E ngrirë • Gati</div>
+  <header class="topbar">
+    <div class="top-head">
+      <div class="brand">
+        <span class="chip">SHKUMJE</span>
+        <span>PRN RAMP OPS</span>
+      </div>
+
+      <div class="right-box">
+        <span class="freeze-badge" id="freezeBadge">Gati</span>
+        <button class="refresh-circle" id="refreshBtn" title="Ngarko të dhënat e fundit dhe ngrije listën" onclick="loadData()">↻</button>
+      </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab-btn active" id="btnDep" onclick="switchTab('dep')">🛫 SHKUMJE</button>
-      <button class="tab-btn" id="btnArr" onclick="switchTab('arr')">🛬 ARDHJE</button>
-      <button class="refresh-btn" onclick="loadFlights()">↻</button>
+    <div class="search-wrap">
+      <input
+        type="text"
+        id="regInput"
+        class="reg-input"
+        placeholder="Shkruaj regjistrimin e avionit (p.sh. LZCRI)..."
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      >
+      <button class="clear-btn" id="clearBtn" onclick="clearReg()">✕</button>
     </div>
+  </header>
 
-    <div class="search-box">
-      <input type="text" id="searchInput" class="search-input" placeholder="Kërko REG (HBUVD), STAND (201A) ose Qytet...">
-      <button class="clear-btn" id="clearBtn" onclick="clearSearch()">✕</button>
+  <main class="content" id="content">
+    <div class="idle-box">
+      <strong>Shkruaj regjistrimin e avionit lart</strong>
+      Sapo të shkruash regjistrimin (p.sh. <b>LZCRI</b>), të dalin menjëherë të gjitha të dhënat e atij avioni.
     </div>
-  </div>
-
-  <div class="container" id="flightList">
-    <div class="empty">Duke ngarkuar fluturimet...</div>
-  </div>
+  </main>
 
   <script>
     const WORKER_URL = "https://twilight-waterfall-cef0.lindiismajli97.workers.dev";
 
-    let currentType = "dep";
-    let allFlights = [];
+    let flights = [];
+    let dataLoaded = false;
 
-    const searchInput = document.getElementById("searchInput");
+    const regInput = document.getElementById("regInput");
     const clearBtn = document.getElementById("clearBtn");
-    const flightList = document.getElementById("flightList");
-    const lastUpdate = document.getElementById("lastUpdate");
+    const content = document.getElementById("content");
+    const freezeBadge = document.getElementById("freezeBadge");
+    const refreshBtn = document.getElementById("refreshBtn");
 
-    searchInput.addEventListener("input", () => {
-      clearBtn.style.display = searchInput.value ? "block" : "none";
-      renderFlights();
+    regInput.addEventListener("input", () => {
+      clearBtn.style.display = regInput.value ? "block" : "none";
+      renderResult();
     });
 
-    function clearSearch() {
-      searchInput.value = "";
+    function clearReg() {
+      regInput.value = "";
       clearBtn.style.display = "none";
-      renderFlights();
-      searchInput.focus();
+      renderResult();
+      regInput.focus();
     }
 
-    function switchTab(type) {
-      currentType = type;
-      document.getElementById("btnDep").classList.toggle("active", type === "dep");
-      document.getElementById("btnArr").classList.toggle("active", type === "arr");
-      loadFlights();
+    function formatStatusSq(raw) {
+      const s = (raw || "").replace(/\s+/g, " ").trim();
+      const u = s.toUpperCase();
+      if (!u) return "PA STATUS";
+      if (u.includes("DEPARTED")) return s.replace(/DEPARTED/i, "I NISUR");
+      if (u.includes("EXPECTED")) return s.replace(/EXPECTED/i, "I PRITUR");
+      if (u.includes("SCHEDULED")) return "I PLANIFIKUAR";
+      if (u.includes("DELAYED")) return s.replace(/DELAYED/i, "I VONUAR");
+      if (u.includes("CANCEL")) return "I ANULUAR";
+      if (u.includes("BOARDING")) return "IMBarkim / BOARDING";
+      return u;
     }
 
-    async function loadFlights() {
-      lastUpdate.textContent = "Duke rifreskuar...";
+    function isHeaderLikeRow(c) {
+      const joined = c.join(" ").toUpperCase();
+      return (
+        (c[0] || "").toUpperCase() === "DATE" ||
+        (c[1] || "").toUpperCase().includes("FLIGHT NUMBER") ||
+        (c[7] || "").toUpperCase() === "REG" ||
+        joined.includes("FLIGHT NUMBER AIRLINE")
+      );
+    }
+
+    function parseRow(tdList) {
+      const c = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
+      return {
+        date: c[0] || "—",
+        flight: c[1] || "—",
+        airline: c[2] || "—",
+        destination: c[3] || "—",
+        schedule: c[4] || "—",
+        etd: c[5] || "—",
+        acType: c[6] || "—",
+        reg: c[7] || "—",
+        checkin: c[8] || "—",
+        gate: c[9] || "—",
+        stand: c[10] || "—",
+        status: c[11] || ""
+      };
+    }
+
+    async function loadData() {
+      refreshBtn.classList.add("spin");
+      freezeBadge.classList.remove("locked");
+      freezeBadge.textContent = "Duke ngarkuar...";
+
       try {
-        const res = await fetch(`${WORKER_URL}?type=${currentType}`);
-        const htmlText = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
+        const res = await fetch(`${WORKER_URL}?type=dep&t=${Date.now()}`, { cache: "no-store" });
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
 
-        const rows = [...doc.querySelectorAll("table tr")].filter(r => r.querySelectorAll("td").length >= 8);
+        const tables = [...doc.querySelectorAll("table")];
+        const table = tables.find(t => t.querySelectorAll("tr").length > 1) || tables[0];
+        if (!table) throw new Error("No table");
 
-        allFlights = rows.map(r => {
-          const c = [...r.querySelectorAll("td")].map(td => td.innerText.trim());
-          if (currentType === "dep") {
-            return {
-              date: c[0] || "",
-              flight: c[1] || "",
-              airline: c[2] || "",
-              place: c[3] || "",
-              sched: c[4] || "",
-              est: c[5] || "",
-              type: c[6] || "",
-              reg: c[7] || "",
-              gate: c[9] || "",
-              stand: c[10] || "",
-              status: c[11] || ""
-            };
-          } else {
-            return {
-              date: c[0] || "",
-              flight: c[1] || "",
-              airline: c[2] || "",
-              place: c[3] || "",
-              sched: c[4] || "",
-              est: c[5] || "",
-              type: c[6] || "",
-              reg: c[7] || "",
-              gate: c[8] || "",
-              stand: c[9] || "",
-              status: c[10] || ""
-            };
-          }
-        }).filter(f => f.flight && !f.flight.toUpperCase().includes("FLIGHT"));
+        const rows = [...table.querySelectorAll("tr")].filter(r => r.querySelectorAll("td").length >= 8);
 
-        const now = new Date();
-        const timeStr = now.toTimeString().slice(0, 5);
-        lastUpdate.textContent = `Ngrirë në ${timeStr} (${allFlights.length})`;
-        renderFlights();
-      } catch (err) {
-        lastUpdate.textContent = "Gabim lidhjeje";
-        flightList.innerHTML = `<div class="empty">Nuk u lexuan të dhënat. Kontrollo lidhjen ose rrjetin.</div>`;
+        flights = rows
+          .map(r => [...r.querySelectorAll("td")].map(td => td.innerText.replace(/\s+/g, " ").trim()))
+          .filter(c => !isHeaderLikeRow(c) && (c[1] || c[7]))
+          .map(c => ({
+            date: c[0] || "—",
+            flight: c[1] || "—",
+            airline: c[2] || "—",
+            destination: c[3] || "—",
+            schedule: c[4] || "—",
+            etd: c[5] || "—",
+            acType: c[6] || "—",
+            reg: c[7] || "—",
+            checkin: c[8] || "—",
+            gate: c[9] || "—",
+            stand: c[10] || "—",
+            status: c[11] || ""
+          }));
+
+        dataLoaded = true;
+        const nowTime = new Date().toTimeString().slice(0, 8);
+        freezeBadge.classList.add("locked");
+        freezeBadge.textContent = `Ngrirë • ${nowTime}`;
+        renderResult();
+      } catch (e) {
+        freezeBadge.classList.remove("locked");
+        freezeBadge.textContent = "Gabim ngarkimi";
+        content.innerHTML = `<div class="idle-box"><strong>Nuk u lexuan të dhënat</strong>Shtyp butonin e gjelbër ↻ për të provuar sërish.</div>`;
+      } finally {
+        refreshBtn.classList.remove("spin");
       }
     }
 
-    function renderFlights() {
-      const q = searchInput.value.toLowerCase().trim();
-      const filtered = allFlights.filter(f => {
-        if (!q) return true;
-        return (
-          f.reg.toLowerCase().includes(q) ||
-          f.stand.toLowerCase().includes(q) ||
-          f.place.toLowerCase().includes(q) ||
-          f.flight.toLowerCase().includes(q) ||
-          f.airline.toLowerCase().includes(q)
-        );
-      });
+    function renderResult() {
+      const q = regInput.value.toLowerCase().trim();
 
-      if (!filtered.length) {
-        flightList.innerHTML = `<div class="empty">Asnjë fluturim nuk përputhet me kërkimin.</div>`;
+      if (!q) {
+        content.innerHTML = `
+          <div class="idle-box">
+            <strong>Shkruaj regjistrimin e avionit lart</strong>
+            ${dataLoaded
+              ? `Të dhënat janë të ngrira dhe gati (${flights.length} shkumje). Shkruaj p.sh. <b>LZCRI</b> ose <b>HBUVD</b>.`
+              : `Duke përgatitur të dhënat...`}
+          </div>
+        `;
         return;
       }
 
-      flightList.innerHTML = filtered.map(f => {
-        const isDone = f.status.toUpperCase().includes("DEPARTED") || f.status.toUpperCase().includes("LANDED");
-        return `
-          <div class="card ${isDone ? 'departed' : ''}">
-            <div class="card-row-1">
-              <div class="reg-tag">REG: ${f.reg || '—'}</div>
-              <div class="stand-tag">STAND: ${f.stand || '—'}</div>
-            </div>
-            <div class="dest-row">
-              ${currentType === 'dep' ? '🛫' : '🛬'} ${f.place}
-              <span class="flight-sub">(${f.flight} • ${f.type})</span>
-            </div>
-            <div class="meta-row">
-              <span>🕒 Plan: <b>${f.sched}</b> | Akt: <b>${f.est}</b></span>
-              <span><b>${f.status}</b></span>
-            </div>
+      const matches = flights.filter(f => f.reg.toLowerCase().includes(q));
+
+      if (!matches.length) {
+        content.innerHTML = `
+          <div class="idle-box">
+            <strong>Nuk u gjet asnjë avion me regjistrimin "${regInput.value.trim().toUpperCase()}"</strong>
+            Kontrollo regjistrimin ose shtyp butonin e gjelbër ↻ për të rifreskuar listën.
           </div>
         `;
-      }).join("");
+        return;
+      }
+
+      content.innerHTML = `<div class="cards-wrap">` + matches.map(f => {
+        const up = f.status.toUpperCase();
+        const gone = up.includes("DEPARTED") || up.includes("CANCEL");
+        const late = up.includes("DELAYED");
+        const cardCls = gone ? "aircraft-card departed" : (late ? "aircraft-card delayed" : "aircraft-card");
+        const stCls = gone ? "status-strip done" : (late ? "status-strip warn" : "status-strip");
+
+        return `
+          <article class="${cardCls}">
+            <div class="hero-row">
+              <div>
+                <div class="kicker">Regjistrimi (REG)</div>
+                <div class="reg-big">${f.reg}</div>
+              </div>
+              <div class="stand-box">
+                <div class="kicker">Stand / Parkimi</div>
+                <div class="stand-big">${f.stand}</div>
+              </div>
+            </div>
+
+            <div class="dest-box">
+              <div class="kicker">Destinacioni (Ku shkon)</div>
+              <div class="dest-big">🛫 ${f.destination}</div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-cell">
+                <div class="info-label">Data</div>
+                <div class="info-val">${f.date}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Numri i fluturimit</div>
+                <div class="info-val">${f.flight}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Kompania</div>
+                <div class="info-val">${f.airline}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Destinacioni</div>
+                <div class="info-val">${f.destination}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Koha e nisjes (Schedule)</div>
+                <div class="info-val">${f.schedule}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Nisja e parashikuar (ETD)</div>
+                <div class="info-val">${f.etd}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Tipi i avionit (A/C Type)</div>
+                <div class="info-val">${f.acType}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Regjistrimi (REG)</div>
+                <div class="info-val">${f.reg}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Check-In</div>
+                <div class="info-val">${f.checkin}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Gate</div>
+                <div class="info-val">${f.gate}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Stand / Parkimi</div>
+                <div class="info-val">${f.stand}</div>
+              </div>
+              <div class="info-cell">
+                <div class="info-label">Statusi / Nisja</div>
+                <div class="info-val">${formatStatusSq(f.status)}</div>
+              </div>
+            </div>
+
+            <div class="${stCls}">
+              <span class="status-lbl">Gjendja</span>
+              <span class="status-val">${formatStatusSq(f.status)}</span>
+            </div>
+          </article>
+        `;
+      }).join("") + `</div>`;
     }
 
-    loadFlights();
+    loadData();
   </script>
 </body>
 </html>
