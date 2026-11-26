@@ -371,7 +371,7 @@
         type="text"
         id="regInput"
         class="reg-input"
-        placeholder="Shkruaj regjistrimin e avionit (p.sh. LZCRI)..."
+        placeholder="Shkruaj regjistrimin e avionit (p.sh. SPESG)..."
         autocomplete="off"
         autocorrect="off"
         spellcheck="false"
@@ -383,7 +383,7 @@
   <main class="content" id="content">
     <div class="idle-box">
       <strong>Shkruaj regjistrimin e avionit lart</strong>
-      Sapo të shkruash regjistrimin (p.sh. <b>LZCRI</b>), të dalin menjëherë të gjitha të dhënat e atij avioni.
+      Sapo të shkruash regjistrimin (p.sh. <b>SPESG</b>), të dalin menjëherë të gjitha të dhënat e atij avioni.
     </div>
   </main>
 
@@ -429,30 +429,67 @@
     }
 
     function isHeaderRow(cells) {
+      const joined = cells.join(" ").toUpperCase();
       const upper = cells.map(x => x.toUpperCase());
       return (
-        upper.includes("FLIGHT NUMBER") ||
-        upper.includes("REG") ||
-        (upper[0] === "DATE" && upper[1] === "FLIGHT NUMBER")
+        (upper.includes("FLIGHT NUMBER") && upper.includes("AIRLINE")) ||
+        (upper.includes("DATE") && upper.includes("REG") && upper.includes("STAND")) ||
+        joined.includes("FLIGHT NUMBER AIRLINE TO")
       );
     }
 
     function mapRow(cells) {
       const c = cells.map(x => (x || "—").replace(/\s+/g, " ").trim() || "—");
       return {
-        date: c[0],
-        flight: c[1],
-        airline: c[2],
-        destination: c[3],
-        schedule: c[4],
-        etd: c[5],
-        acType: c[6],
-        reg: c[7],
-        checkin: c[8],
-        gate: c[9],
-        stand: c[10],
-        status: c[11] || ""
+        date: c[0] || "—",
+        flight: c[1] || "—",
+        airline: c[2] || "—",
+        destination: c[3] || "—",
+        schedule: c[4] || "—",
+        etd: c[5] || "—",
+        acType: c[6] || "—",
+        reg: c[7] || "—",
+        checkin: c[8] || "—",
+        gate: c[9] || "—",
+        stand: c[10] || "—",
+        status: c[11] || "",
+        rawText: c.join(" ")
       };
+    }
+
+    function parseFlightsFromHtml(htmlText) {
+      const doc = new DOMParser().parseFromString(htmlText, "text/html");
+      const parsed = [];
+
+      const trList = [...doc.querySelectorAll("tr")];
+      for (const tr of trList) {
+        const tdList = [...tr.querySelectorAll("td")];
+        if (tdList.length < 2) continue;
+        const cells = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
+        if (isHeaderRow(cells)) continue;
+        const hasFlightCode = /[A-Z]{2,3}\s?\d{2,4}/i.test(cells.join(" "));
+        const hasTime = /\b\d{1,2}:\d{2}\b/.test(cells.join(" "));
+        if (cells.length >= 4 || hasFlightCode || hasTime) {
+          parsed.push(mapRow(cells));
+        }
+      }
+
+      if (parsed.length > 0) return parsed;
+
+      const blockList = [...doc.querySelectorAll("div, li, article, section")];
+      for (const el of blockList) {
+        if (el.children.length > 8) continue;
+        const txt = el.innerText.replace(/\s+/g, " ").trim();
+        if (!txt || txt.length < 10 || txt.length > 400) continue;
+        if (/[A-Z]{2,3}\s?\d{2,4}/i.test(txt) && /\b\d{1,2}:\d{2}\b/.test(txt)) {
+          const parts = txt.split(/\s{2,}|\s*\|\s*/).filter(Boolean);
+          if (parts.length >= 2) {
+            parsed.push(mapRow(parts));
+          }
+        }
+      }
+
+      return parsed;
     }
 
     async function loadData() {
@@ -467,28 +504,7 @@
         }
 
         const htmlText = await res.text();
-        const doc = new DOMParser().parseFromString(htmlText, "text/html");
-        const tables = [...doc.querySelectorAll("table")];
-        const table = tables.find(t => t.querySelectorAll("tr").length > 1) || tables[0];
-        if (!table) {
-          throw new Error("Tabela nuk u gjet");
-        }
-
-        const trList = [...table.querySelectorAll("tr")];
-        const parsed = [];
-
-        for (const tr of trList) {
-          const tdList = [...tr.querySelectorAll("td")];
-          if (tdList.length < 7) continue;
-          const cells = tdList.map(td => td.innerText.replace(/\s+/g, " ").trim());
-          if (isHeaderRow(cells)) continue;
-          const item = mapRow(cells);
-          if (item.flight !== "—" || item.reg !== "—") {
-            parsed.push(item);
-          }
-        }
-
-        flights = parsed;
+        flights = parseFlightsFromHtml(htmlText);
         dataLoaded = true;
 
         const nowTime = new Date().toTimeString().slice(0, 8);
@@ -518,14 +534,17 @@
           <div class="idle-box">
             <strong>Shkruaj regjistrimin e avionit lart</strong>
             ${dataLoaded
-              ? `Të dhënat janë të ngrira dhe gati (${flights.length} shkumje). Shkruaj p.sh. <b>LZCRI</b> ose <b>HBUVD</b>.`
+              ? `Të dhënat janë të ngrira dhe gati (${flights.length} shkumje). Shkruaj p.sh. <b>SPESG</b> ose <b>LZCRI</b>.`
               : `Duke ngarkuar të dhënat...`}
           </div>
         `;
         return;
       }
 
-      const matches = flights.filter(f => normalizeCode(f.reg).includes(normQuery));
+      const matches = flights.filter(f =>
+        normalizeCode(f.reg).includes(normQuery) ||
+        normalizeCode(f.rawText).includes(normQuery)
+      );
 
       if (!matches.length) {
         content.innerHTML = `
